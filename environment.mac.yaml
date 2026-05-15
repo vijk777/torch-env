@@ -1,0 +1,31 @@
+name: torch-env
+channels:
+  - conda-forge
+
+# Conda installs only python + pip + a consistent BLAS stack.
+# Everything else (including torch) comes from pip so we get fresh wheels.
+# macOS arm64 build; torch wheels include MPS support by default.
+dependencies:
+  - python=3.13
+  - pip
+
+  - "libblas=*=*openblas*"
+
+  - pip:
+      - torch
+
+      - numpy
+      - scipy
+      - pandas
+      - polars
+      - matplotlib
+      - tqdm
+      - tensorstore
+      - pydantic
+      - tyro
+      - pyyaml
+      - ruff
+      - pre-commit
+      - ipython
+      - ipykernel
+      - jupyter

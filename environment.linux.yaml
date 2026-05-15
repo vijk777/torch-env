@@ -1,0 +1,36 @@
+name: torch-env
+channels:
+  - conda-forge
+
+# Conda installs only python + pip + a consistent BLAS/OpenMP stack.
+# Everything else (including torch) comes from pip so we get fresh wheels.
+# Linux x86_64 build with CUDA 13 torch wheels.
+dependencies:
+  - python=3.13
+  - pip
+
+  # Single OpenMP runtime, OpenBLAS for numpy/scipy
+  - "libblas=*=*openblas*"
+  - "liblapack=*=*openblas*"
+  - llvm-openmp
+
+  - pip:
+      # PyTorch CUDA 13 wheels
+      - --extra-index-url https://download.pytorch.org/whl/cu130
+      - torch
+
+      - numpy
+      - scipy
+      - pandas
+      - polars
+      - matplotlib
+      - tqdm
+      - tensorstore
+      - pydantic
+      - tyro
+      - pyyaml
+      - ruff
+      - pre-commit
+      - ipython
+      - ipykernel
+      - jupyter

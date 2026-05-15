@@ -1,0 +1,88 @@
+name: monthly-upgrade
+
+# Rebuild both envs from their loose yaml specs, run the smoke test, and if
+# both succeed commit refreshed pip-freeze lockfiles back to main.
+on:
+  schedule:
+    # 1st of every month, 08:00 UTC
+    - cron: "0 8 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            yaml: environment.linux.yaml
+            lockfile: lockfiles/requirements.linux.txt
+            label: linux
+          - os: macos-14   # Apple Silicon
+            yaml: environment.mac.yaml
+            lockfile: lockfiles/requirements.mac.txt
+            label: mac
+
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniconda-version: latest
+          activate-environment: torch-env
+          environment-file: ${{ matrix.yaml }}
+          auto-activate-base: false
+
+      - name: Smoke test
+        run: python scripts/test_env.py --ci
+
+      - name: Freeze lockfile
+        run: |
+          mkdir -p lockfiles
+          pip freeze > ${{ matrix.lockfile }}
+
+      - name: Upload lockfile artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lockfile-${{ matrix.label }}
+          path: ${{ matrix.lockfile }}
+
+  commit:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: lockfile-linux
+          path: lockfiles
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: lockfile-mac
+          path: lockfiles
+
+      - name: Commit refreshed lockfiles
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- lockfiles/; then
+            echo "No lockfile changes."
+            exit 0
+          fi
+          git add lockfiles/
+          git commit -m "monthly env upgrade: refresh lockfiles ($(date -u +%Y-%m-%d))"
+          git push
