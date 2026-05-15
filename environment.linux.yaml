@@ -15,24 +15,39 @@ dependencies:
   - llvm-openmp
 
   - pip:
-      # PyTorch CUDA 13 wheels
+      # PyTorch CUDA 13 wheels (covers torch, torchvision)
       - --extra-index-url https://download.pytorch.org/whl/cu130
-      - torch
 
-      - numpy
-      - scipy
-      - scikit-learn
-      - scikit-image
-      - pandas
-      - polars
+      - h5py
+      - imageio
+      - ipykernel
+      - ipython
+      - joblib
+      - jupyter
       - matplotlib
-      - tqdm
-      - tensorstore
+      - numpy
+      - opencv-python
+      - pandas
+      - Pillow
+      - polars
+      - pre-commit
       - pydantic
-      - tyro
+      - pysr
+      - pytest
       - pyyaml
       - ruff
-      - pre-commit
-      - ipython
-      - ipykernel
-      - jupyter
+      - scikit-image
+      - scikit-learn
+      - scipy
+      - seaborn
+      - tensorstore
+      - tifffile
+      - torch
+      - torch-geometric
+      - torchdiffeq
+      - torchvision
+      - tqdm
+      - tyro
+      - umap-learn
+      - xarray
+      - zarr
