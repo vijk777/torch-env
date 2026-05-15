@@ -31,50 +31,27 @@ make list-tags                # show available tags
 
 ## Shell shortcuts
 
-Drop these into your `~/.bashrc` / `~/.zshrc` and reload your shell:
+`shell/torch-env.sh` defines two functions; source it from your shell rc:
 
 ```bash
-# Activate the newest torch-* env installed locally.
-torch-latest() {
-  local tag
-  tag=$(conda env list \
-        | awk '{print $1}' \
-        | grep -E '^torch-20[0-9]{2}\.[0-9]{1,2}\.[0-9]+$' \
-        | sed 's/^torch-//' \
-        | sort -V \
-        | tail -1)
-  [ -z "$tag" ] && { echo "no torch-YYYY.MM.* envs installed"; return 1; }
-  conda activate "torch-$tag"
-}
-
-# Activate the env this repo pins to via .torch-env-<plat>.
-torch-repo() {
-  local plat
-  case "$(uname -s)" in
-    Darwin) plat=mac ;;
-    Linux)  plat=linux ;;
-    *) echo "unsupported platform: $(uname -s)"; return 1 ;;
-  esac
-
-  local root file tag
-  root=$(git rev-parse --show-toplevel 2>/dev/null) || {
-    echo "not in a git repo"; return 1; }
-  file="$root/.torch-env-$plat"
-  [ -f "$file" ] || { echo "no $file"; return 1; }
-
-  tag=$(tr -d '[:space:]' < "$file")
-  if ! conda env list | awk '{print $1}' | grep -qx "torch-$tag"; then
-    echo "env torch-$tag not installed. Build with: (cd ~/path/to/torch-env && make $tag)"
-    return 1
-  fi
-  conda activate "torch-$tag"
-}
+echo 'source /path/to/torch-env/shell/torch-env.sh' >> ~/.bashrc   # or ~/.zshrc
 ```
 
-- `torch-latest` — activates the highest-version env you have installed.
-  Repo-agnostic.
-- `torch-repo` — from anywhere inside a consumer repo, activates the env
-  pinned in `.torch-env-mac` / `.torch-env-linux`.
+- `torch-latest` — activate the highest-version `torch-YYYY.MM.N` env
+  installed locally. Repo-agnostic.
+- `torch-repo` — from anywhere inside a consumer repo, activate the env
+  pinned by `.torch-env-mac` / `.torch-env-linux`.
+
+For devcontainers, add to your `.devcontainer/devcontainer.json`:
+
+```jsonc
+{
+  "mounts": [
+    "source=${localEnv:HOME}/path/to/torch-env,target=/opt/torch-env,type=bind,consistency=cached"
+  ],
+  "postCreateCommand": "echo 'source /etc/profile.d/conda.sh && source /opt/torch-env/shell/torch-env.sh' >> ~/.bashrc"
+}
+```
 
 ## Using torch-env from other repos
 
