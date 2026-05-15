@@ -21,20 +21,25 @@ wheels.
 
 ## Setup
 
-### From the loose spec (latest versions)
+### From a tag (recommended, reproducible)
+
+The Makefile auto-detects mac/linux and builds an env named `torch-<tag>`
+from that tag's lockfile.
+
+```bash
+make latest             # build env from newest tag
+make 2026.05.1          # build env from a specific tag
+make list-tags          # see what's available
+conda activate torch-<tag>
+```
+
+Envs are named after the tag, so multiple versions can live side-by-side.
+
+### From the loose spec (latest, unpinned, for refreshing the env)
 
 ```bash
 conda env create -f environment.linux.yaml    # or environment.mac.yaml
 conda activate torch-env
-python scripts/test_env.py
-```
-
-### From the lockfile (reproducible)
-
-```bash
-conda create -n torch-env python=3.13 pip "libblas=*=*openblas*" -c conda-forge
-conda activate torch-env
-pip install -r lockfiles/requirements.linux.txt    # or .mac.txt
 python scripts/test_env.py
 ```
 
