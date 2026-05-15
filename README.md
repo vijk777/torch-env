@@ -57,9 +57,9 @@ The point of this env is to be reused across repos. Each consumer repo
 declaring only repo-specific deps (not the shared base).
 
 ```bash
-conda activate torch-env
-cd ~/research-notes/repos/zap-model       && pip install -e .
-cd ~/research-notes/repos/connectome-gnn  && pip install -e .
+conda activate torch-<tag>
+cd path/to/repo-a && pip install -e .
+cd path/to/repo-b && pip install -e .
 ```
 
 Each `pip install -e .` writes an editable-install record into the env's
