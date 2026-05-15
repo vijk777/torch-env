@@ -15,7 +15,9 @@ PIP_EXTRA_linux := --extra-index-url https://download.pytorch.org/whl/cu130
 PIP_EXTRA_mac   :=
 PIP_EXTRA       := $(PIP_EXTRA_$(PLAT))
 
-LATEST := $(shell git tag --list '20*.*.*' --sort=-v:refname | head -n1)
+# Fetch first so LATEST reflects upstream tags, not just the local cache.
+# Runs once per make invocation. Silenced when offline.
+LATEST := $(shell git fetch --tags --quiet 2>/dev/null; git tag --list '20*.*.*' --sort=-v:refname | head -n1)
 
 help:
 	@echo "Platform detected: $(PLAT)"
@@ -30,7 +32,6 @@ help:
 	@echo "Each target creates a conda env named torch-<tag>."
 
 list-tags:
-	@git fetch --tags --quiet
 	@git tag --list '20*.*.*' --sort=-v:refname
 
 latest:
@@ -47,7 +48,6 @@ latest:
 install:
 	@if [ -z "$(TAG)" ]; then echo "Usage: make install TAG=<tag>"; exit 1; fi
 	@if [ -z "$(CONDA_BASE)" ]; then echo "Unsupported platform: $(PLAT)"; exit 1; fi
-	@git fetch --tags --quiet
 	@if ! git rev-parse --verify "$(TAG)" >/dev/null 2>&1; then \
 		echo "Unknown tag: $(TAG)"; exit 1; \
 	fi
