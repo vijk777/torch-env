@@ -50,7 +50,7 @@ install:
 		exit 1; \
 	fi
 	@echo "Building torch-$(TAG) for $(PLAT) from tag $(TAG)"
-	conda create -y -n torch-$(TAG) -c conda-forge $(CONDA_BASE)
+	conda create -y -n torch-$(TAG) --override-channels -c conda-forge $(CONDA_BASE)
 	git show $(TAG):lockfiles/requirements.$(PLAT).txt > /tmp/torch-$(TAG).$(PLAT).txt
 	conda run -n torch-$(TAG) --no-capture-output pip install -r /tmp/torch-$(TAG).$(PLAT).txt
 	conda run -n torch-$(TAG) --no-capture-output python scripts/test_env.py
