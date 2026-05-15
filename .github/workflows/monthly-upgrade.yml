@@ -1,10 +1,11 @@
 name: monthly-upgrade
 
-# Rebuild both envs from their loose yaml specs, run the smoke test, and if
-# both succeed commit refreshed pip-freeze lockfiles back to main.
+# Rebuild both envs from their loose yaml specs, run the smoke test, and
+# if any main-list package (i.e. one named in the yaml's pip section)
+# changed version on either platform, commit refreshed lockfiles and tag
+# as YYYY.MM.N.
 on:
   schedule:
-    # 1st of every month, 08:00 UTC
     - cron: "0 8 1 * *"
   workflow_dispatch:
 
@@ -21,7 +22,7 @@ jobs:
             yaml: environment.linux.yaml
             lockfile: lockfiles/requirements.linux.txt
             label: linux
-          - os: macos-14   # Apple Silicon
+          - os: macos-14
             yaml: environment.mac.yaml
             lockfile: lockfiles/requirements.mac.txt
             label: mac
@@ -64,25 +65,91 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - run: pip install pyyaml
 
       - uses: actions/download-artifact@v4
         with:
           name: lockfile-linux
           path: lockfiles
-
       - uses: actions/download-artifact@v4
         with:
           name: lockfile-mac
           path: lockfiles
 
-      - name: Commit refreshed lockfiles
+      - name: Detect main-list bumps
+        id: bumps
+        run: |
+          mkdir -p /tmp/old /tmp/diff
+          git show HEAD:lockfiles/requirements.linux.txt > /tmp/old/linux.txt 2>/dev/null || true
+          git show HEAD:lockfiles/requirements.mac.txt   > /tmp/old/mac.txt   2>/dev/null || true
+
+          python scripts/compute_bumps.py environment.linux.yaml /tmp/old/linux.txt lockfiles/requirements.linux.txt > /tmp/diff/linux.txt
+          python scripts/compute_bumps.py environment.mac.yaml   /tmp/old/mac.txt   lockfiles/requirements.mac.txt   > /tmp/diff/mac.txt
+
+          git fetch --tags --quiet
+          EXISTING=$(git tag --list "20*.*.*" | wc -l | tr -d ' ')
+
+          if [ "$EXISTING" = "0" ]; then
+            echo "seed=true"    >> "$GITHUB_OUTPUT"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif [ -s /tmp/diff/linux.txt ] || [ -s /tmp/diff/mac.txt ]; then
+            echo "seed=false"   >> "$GITHUB_OUTPUT"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "seed=false"    >> "$GITHUB_OUTPUT"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "--- linux diff ---"; cat /tmp/diff/linux.txt
+          echo "--- mac diff ---";   cat /tmp/diff/mac.txt
+
+      - name: Commit and tag
+        if: steps.bumps.outputs.changed == 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          PREFIX="$(date -u +%Y.%m)"
+          MAX=0
+          for t in $(git tag --list "${PREFIX}.*"); do
+            N="${t##*.}"
+            if [[ "$N" =~ ^[0-9]+$ ]] && [ "$N" -gt "$MAX" ]; then MAX="$N"; fi
+          done
+          TAG="${PREFIX}.$((MAX + 1))"
+          echo "Next tag: $TAG"
+
           git add lockfiles/
+
+          {
+            echo "chore: bump env to $TAG"
+            echo
+            if [ "${{ steps.bumps.outputs.seed }}" = "true" ]; then
+              echo "Initial tag."
+            fi
+            if [ -s /tmp/diff/linux.txt ]; then
+              echo "linux:"
+              cat /tmp/diff/linux.txt
+            fi
+            if [ -s /tmp/diff/mac.txt ]; then
+              echo "mac:"
+              cat /tmp/diff/mac.txt
+            fi
+          } > /tmp/msg
+
+          # If the working tree has no actual file changes (seed case where
+          # main already had identical lockfiles), make an empty commit so
+          # the tag has somewhere to live.
           if git diff --cached --quiet -- lockfiles/; then
-            echo "No lockfile changes."
-            exit 0
+            git commit --allow-empty -F /tmp/msg
+          else
+            git commit -F /tmp/msg
           fi
-          git commit -m "chore: refresh lockfiles ($(date -u +%Y-%m-%d))"
+          git tag "$TAG"
           git push
+          git push origin "$TAG"
