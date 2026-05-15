@@ -60,5 +60,8 @@ install:
 	git show $(TAG):lockfiles/requirements.$(PLAT).txt > /tmp/torch-$(TAG).$(PLAT).txt
 	conda run -n torch-$(TAG) --no-capture-output pip install $(PIP_EXTRA) -r /tmp/torch-$(TAG).$(PLAT).txt
 	conda run -n torch-$(TAG) --no-capture-output python scripts/test_env.py
+	conda run -n torch-$(TAG) --no-capture-output python -m ipykernel install --user \
+		--name torch-$(TAG) --display-name "Python (torch-$(TAG))"
 	@echo
 	@echo "Done. Activate with:  conda activate torch-$(TAG)"
+	@echo "Jupyter kernel:       torch-$(TAG)"
