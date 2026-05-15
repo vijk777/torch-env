@@ -79,10 +79,10 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- lockfiles/; then
+          git add lockfiles/
+          if git diff --cached --quiet -- lockfiles/; then
             echo "No lockfile changes."
             exit 0
           fi
-          git add lockfiles/
-          git commit -m "monthly env upgrade: refresh lockfiles ($(date -u +%Y-%m-%d))"
+          git commit -m "chore: refresh lockfiles ($(date -u +%Y-%m-%d))"
           git push
