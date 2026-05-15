@@ -9,6 +9,12 @@ CONDA_BASE_linux := python=3.13 pip 'libblas=*=*openblas*' 'liblapack=*=*openbla
 CONDA_BASE_mac   := python=3.13 pip 'libblas=*=*openblas*'
 CONDA_BASE       := $(CONDA_BASE_$(PLAT))
 
+# Extra pip flags per platform. Linux uses PyTorch's cu130 wheel index;
+# pip freeze pins torch==X.Y.Z+cu130 but doesn't record the URL.
+PIP_EXTRA_linux := --extra-index-url https://download.pytorch.org/whl/cu130
+PIP_EXTRA_mac   :=
+PIP_EXTRA       := $(PIP_EXTRA_$(PLAT))
+
 LATEST := $(shell git tag --list '20*.*.*' --sort=-v:refname | head -n1)
 
 help:
@@ -52,7 +58,7 @@ install:
 	@echo "Building torch-$(TAG) for $(PLAT) from tag $(TAG)"
 	conda create -y -n torch-$(TAG) --override-channels -c conda-forge $(CONDA_BASE)
 	git show $(TAG):lockfiles/requirements.$(PLAT).txt > /tmp/torch-$(TAG).$(PLAT).txt
-	conda run -n torch-$(TAG) --no-capture-output pip install -r /tmp/torch-$(TAG).$(PLAT).txt
+	conda run -n torch-$(TAG) --no-capture-output pip install $(PIP_EXTRA) -r /tmp/torch-$(TAG).$(PLAT).txt
 	conda run -n torch-$(TAG) --no-capture-output python scripts/test_env.py
 	@echo
 	@echo "Done. Activate with:  conda activate torch-$(TAG)"
