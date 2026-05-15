@@ -153,3 +153,15 @@ jobs:
           git tag "$TAG"
           git push
           git push origin "$TAG"
+
+          SEED_FLAG=""
+          if [ "${{ steps.bumps.outputs.seed }}" = "true" ]; then SEED_FLAG="--seed"; fi
+          python scripts/render_release_notes.py "$TAG" \
+            --bumps-linux /tmp/diff/linux.txt \
+            --bumps-mac   /tmp/diff/mac.txt \
+            $SEED_FLAG \
+            > /tmp/release-notes.md
+
+          gh release create "$TAG" --title "$TAG" --notes-file /tmp/release-notes.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

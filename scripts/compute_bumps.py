@@ -38,7 +38,7 @@ def main_packages(yaml_path: Path) -> set[str]:
             s = item.strip()
             if not s or s.startswith("-") or "://" in s:
                 continue
-            name = re.split(r"[<>=!~\s\[]", s, 1)[0]
+            name = re.split(r"[<>=!~\s\[]", s, maxsplit=1)[0]
             if name:
                 names.add(norm(name))
     return names
