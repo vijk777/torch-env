@@ -29,6 +29,7 @@ dependencies:
       - pysr
       - pytest
       - pyyaml
+      - rerun-sdk
       - ruff
       - scikit-image
       - scikit-learn
