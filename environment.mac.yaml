@@ -12,7 +12,6 @@ dependencies:
   - "libblas=*=*openblas*"
 
   - pip:
-      - aim
       - h5py
       - hydra-core
       - imageio
@@ -21,6 +20,7 @@ dependencies:
       - joblib
       - jupyter
       - matplotlib
+      - mlflow
       - numpy
       - opencv-python
       - pandas

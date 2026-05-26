@@ -18,7 +18,6 @@ dependencies:
       # PyTorch CUDA 13 wheels (covers torch, torchvision)
       - --extra-index-url https://download.pytorch.org/whl/cu130
 
-      - aim
       - h5py
       - hydra-core
       - imageio
@@ -27,6 +26,7 @@ dependencies:
       - joblib
       - jupyter
       - matplotlib
+      - mlflow
       - numpy
       - opencv-python
       - pandas
