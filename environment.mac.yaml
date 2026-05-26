@@ -12,7 +12,9 @@ dependencies:
   - "libblas=*=*openblas*"
 
   - pip:
+      - aim
       - h5py
+      - hydra-core
       - imageio
       - ipykernel
       - ipython
