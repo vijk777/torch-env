@@ -27,6 +27,7 @@ dependencies:
       - jupyter
       - matplotlib
       - mlflow
+      - neuroglancer
       - numpy
       - opencv-python
       - pandas
