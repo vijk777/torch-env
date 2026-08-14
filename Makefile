@@ -11,6 +11,12 @@ CONDA_BASE       := $(CONDA_BASE_$(PLAT))
 
 # Extra pip flags per platform. Linux uses PyTorch's cu130 wheel index;
 # pip freeze pins torch==X.Y.Z+cu130 but doesn't record the URL.
+#
+# The cu130 index also mirrors NVIDIA packages (e.g. cuda-toolkit) but links them
+# to pypi.nvidia.com, which is Akamai-fronted with a 20s DNS TTL -- unreachable
+# from allowlist-firewalled environments that pin resolved IPs. So install runs
+# two passes: everything but torch/torchvision from PyPI (identical wheels), then
+# the full lockfile with the cu130 index for the torch wheels alone.
 PIP_EXTRA_linux := --extra-index-url https://download.pytorch.org/whl/cu130
 PIP_EXTRA_mac   :=
 PIP_EXTRA       := $(PIP_EXTRA_$(PLAT))
@@ -58,6 +64,10 @@ install:
 	@echo "Building torch-$(TAG) for $(PLAT) from tag $(TAG)"
 	conda create -y -n torch-$(TAG) --override-channels -c conda-forge $(CONDA_BASE)
 	git show $(TAG):lockfiles/requirements.$(PLAT).txt > /tmp/torch-$(TAG).$(PLAT).txt
+	grep -vE '^(torch|torchvision)==' /tmp/torch-$(TAG).$(PLAT).txt \
+		> /tmp/torch-$(TAG).$(PLAT).nontorch.txt
+	conda run -n torch-$(TAG) --no-capture-output pip install \
+		--index-url https://pypi.org/simple -r /tmp/torch-$(TAG).$(PLAT).nontorch.txt
 	conda run -n torch-$(TAG) --no-capture-output pip install $(PIP_EXTRA) -r /tmp/torch-$(TAG).$(PLAT).txt
 	conda run -n torch-$(TAG) --no-capture-output python scripts/test_env.py
 	conda run -n torch-$(TAG) --no-capture-output python -m ipykernel install --user \
