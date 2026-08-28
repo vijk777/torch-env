@@ -1,8 +1,8 @@
-"""Audit the native libraries backing numpy / torch / warp, on linux and mac.
+"""Audit the native libraries backing numpy / torch / warp / sklearn.
 
 Two jobs:
 
-1. Exercise a small CPU-only workload through all three stacks, so the check
+1. Exercise a small CPU-only workload through all four stacks, so the check
    runs anywhere -- including GPU-less CI runners.
 2. Report which shared libraries actually got loaded, classified by origin:
 
@@ -119,6 +119,25 @@ def run_cpu_workload() -> None:
         FAILURES.append(f"warp/torch zero-copy interop wrong: {tt[:4].tolist()}")
     else:
         print("interop warp<->torch zero-copy ok")
+
+    # sklearn last, and specifically KMeans: it is the OpenMP-parallel path, so
+    # it pulls in sklearn's own libomp alongside torch's. sklearn + torch in one
+    # process is the duplicate-OpenMP case worth watching, and a plain import
+    # does not load the runtime.
+    import sklearn
+    from sklearn.cluster import KMeans
+
+    print(f"sklearn {sklearn.__version__}")
+
+    blobs = np.vstack([
+        rng.standard_normal((64, 8), dtype=np.float32) + off
+        for off in (-5.0, 0.0, 5.0)
+    ])
+    labels = KMeans(n_clusters=3, n_init=2, random_state=0).fit_predict(blobs)
+    if len(set(labels.tolist())) != 3:
+        FAILURES.append(f"sklearn KMeans found {len(set(labels.tolist()))} clusters, expected 3")
+    else:
+        print("sklearn KMeans ok (OpenMP-parallel path)")
 
 
 def report_backends() -> None:

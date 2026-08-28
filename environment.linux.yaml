@@ -2,17 +2,20 @@ name: torch-env
 channels:
   - conda-forge
 
-# Conda installs only python + pip + a consistent BLAS/OpenMP stack.
-# Everything else (including torch) comes from pip so we get fresh wheels.
+# Conda installs only python + pip. Everything else (including torch) comes
+# from pip so we get fresh wheels.
 # Linux x86_64 build with CUDA 13 torch wheels.
+#
+# No conda BLAS/OpenMP stack: scripts/check_native_libs.py shows nothing here
+# ever loaded it. numpy and scipy load their own vendored scipy-openblas, and
+# the OpenMP runtimes in play are torch's libgomp and sklearn's libomp -- both
+# vendored. sklearn sets KMP_DUPLICATE_LIB_OK itself, so the several-runtimes
+# state is its normal supported arrangement rather than something a conda pin
+# was fixing. The pins went as a group because conda's openblas is the
+# openmp_* build variant and pulls llvm-openmp back in on its own.
 dependencies:
   - python=3.13
   - pip
-
-  # Single OpenMP runtime, OpenBLAS for numpy/scipy
-  - "libblas=*=*openblas*"
-  - "liblapack=*=*openblas*"
-  - llvm-openmp
 
   - pip:
       # PyTorch CUDA 13 wheels (covers torch, torchvision)
