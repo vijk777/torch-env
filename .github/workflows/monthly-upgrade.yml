@@ -8,6 +8,15 @@ on:
   schedule:
     - cron: "0 8 1 * *"
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Tag a release even if no main-list package changed"
+        type: boolean
+        default: false
+      reason:
+        description: "Why this release exists (shown in the release notes)"
+        type: string
+        required: false
 
 permissions:
   contents: write
@@ -104,6 +113,11 @@ jobs:
           if [ "$EXISTING" = "0" ]; then
             echo "seed=true"    >> "$GITHUB_OUTPUT"
             echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.inputs.force }}" = "true" ]; then
+            # Conda-section edits and workflow changes are invisible to
+            # compute_bumps.py, which only diffs pip main-list versions.
+            echo "seed=false"   >> "$GITHUB_OUTPUT"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           elif [ -s /tmp/diff/linux.txt ] || [ -s /tmp/diff/mac.txt ]; then
             echo "seed=false"   >> "$GITHUB_OUTPUT"
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -165,9 +179,12 @@ jobs:
           python scripts/render_release_notes.py "$TAG" \
             --bumps-linux /tmp/diff/linux.txt \
             --bumps-mac   /tmp/diff/mac.txt \
+            --note "$RELEASE_NOTE" \
             $SEED_FLAG \
             > /tmp/release-notes.md
 
           gh release create "$TAG" --title "$TAG" --notes-file /tmp/release-notes.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Via env, not inline ${{ }}, so dispatch input can't inject shell.
+          RELEASE_NOTE: ${{ github.event.inputs.reason }}

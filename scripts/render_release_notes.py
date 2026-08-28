@@ -56,7 +56,8 @@ def parse_lock(path: Path) -> dict[str, str]:
     return out
 
 
-def render(tag: str, bumps_linux: str, bumps_mac: str, seed: bool) -> str:
+def render(tag: str, bumps_linux: str, bumps_mac: str, seed: bool,
+           note: str = "") -> str:
     linux_lock = parse_lock(Path("lockfiles/requirements.linux.txt"))
     mac_lock   = parse_lock(Path("lockfiles/requirements.mac.txt"))
 
@@ -67,6 +68,9 @@ def render(tag: str, bumps_linux: str, bumps_mac: str, seed: bool) -> str:
 
     if seed:
         lines += ["Initial tag.", ""]
+
+    if note.strip():
+        lines += [note.strip(), ""]
 
     if bumps_linux or bumps_mac:
         lines.append("## Bumps")
@@ -103,12 +107,15 @@ def main() -> int:
     ap.add_argument("--bumps-linux", default=None)
     ap.add_argument("--bumps-mac", default=None)
     ap.add_argument("--seed", action="store_true")
+    ap.add_argument("--note", default="",
+                    help="Free-text line explaining why this release exists.")
     args = ap.parse_args()
     sys.stdout.write(render(
         tag=args.tag,
         bumps_linux=_read(args.bumps_linux),
         bumps_mac=_read(args.bumps_mac),
         seed=args.seed,
+        note=args.note,
     ))
     return 0
 
