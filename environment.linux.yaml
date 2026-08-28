@@ -53,5 +53,6 @@ dependencies:
       - tqdm
       - tyro
       - umap-learn
+      - warp-lang
       - xarray
       - zarr
