@@ -6,7 +6,7 @@ PLAT := $(shell uname -s | tr '[:upper:]' '[:lower:]' | sed 's/darwin/mac/')
 # Conda base packages (mirrors the conda section of environment.<plat>.yaml).
 # Updated here when the yaml's non-pip section changes.
 CONDA_BASE_linux := python=3.13 pip 'libblas=*=*openblas*' 'liblapack=*=*openblas*' llvm-openmp
-CONDA_BASE_mac   := python=3.13 pip 'libblas=*=*openblas*'
+CONDA_BASE_mac   := python=3.13 pip
 CONDA_BASE       := $(CONDA_BASE_$(PLAT))
 
 # Extra pip flags per platform. Linux uses PyTorch's cu130 wheel index;

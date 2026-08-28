@@ -2,14 +2,18 @@ name: torch-env
 channels:
   - conda-forge
 
-# Conda installs only python + pip + a consistent BLAS stack.
-# Everything else (including torch) comes from pip so we get fresh wheels.
+# Conda installs only python + pip. Everything else (including torch) comes
+# from pip so we get fresh wheels.
 # macOS arm64 build; torch wheels include MPS support by default.
+#
+# No conda BLAS here, unlike the linux spec: numpy >=2.0 and scipy >=1.14 ship
+# separate macOS >=14 arm64 wheels linked against Apple's Accelerate framework
+# rather than vendoring OpenBLAS, and torch/sklearn carry their own libomp. A
+# conda openblas was therefore ~14MB that nothing ever loaded -- verified with
+# scripts/check_native_libs.py, which now runs in CI on both platforms.
 dependencies:
   - python=3.13
   - pip
-
-  - "libblas=*=*openblas*"
 
   - pip:
       - h5py

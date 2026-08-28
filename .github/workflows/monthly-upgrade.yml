@@ -47,6 +47,12 @@ jobs:
       - name: Smoke test
         run: python scripts/test_env.py --ci
 
+      # CPU-only, so it runs on the GPU-less runners. Also prints which BLAS /
+      # OpenMP libraries each platform actually loads, and whether any of them
+      # come from conda rather than the pip wheels.
+      - name: Native library audit
+        run: python scripts/check_native_libs.py
+
       - name: Freeze lockfile
         run: |
           mkdir -p lockfiles
