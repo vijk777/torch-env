@@ -1,4 +1,4 @@
-.PHONY: help latest install list-tags
+.PHONY: help latest install list-tags jupyter
 
 # Detect platform: linux | mac
 PLAT := $(shell uname -s | tr '[:upper:]' '[:lower:]' | sed 's/darwin/mac/')
@@ -19,6 +19,9 @@ PIP_EXTRA       := $(PIP_EXTRA_$(PLAT))
 # Runs once per make invocation. Silenced when offline.
 LATEST := $(shell git fetch --tags --quiet 2>/dev/null; git tag --list '20*.*.*' --sort=-v:refname | head -n1)
 
+# Tag `make jupyter` registers a kernel for. Defaults to the latest tag.
+KERNEL_TAG := $(if $(TAG),$(TAG),$(LATEST))
+
 help:
 	@echo "Platform detected: $(PLAT)"
 	@echo "Latest tag:        $(LATEST)"
@@ -27,6 +30,8 @@ help:
 	@echo "  make latest             build env from latest tag ($(LATEST))"
 	@echo "  make <tag>              build env from a specific tag, e.g. make 2026.05.1"
 	@echo "  make install TAG=<tag>  same, explicit form"
+	@echo "  make jupyter            register a Jupyter kernel for the latest env"
+	@echo "                          (TAG=<tag> to pick another; builds it if missing)"
 	@echo "  make list-tags          list available tags"
 	@echo
 	@echo "Each target creates a conda env named torch-<tag>."
@@ -40,6 +45,24 @@ latest:
 		exit 1; \
 	fi
 	@$(MAKE) install TAG=$(LATEST)
+
+# Register a kernel for an already-built env. `make install` does this too,
+# so this is for envs built before the kernel step existed, or after a
+# `jupyter --paths` / kernelspec wipe. Builds the env if it's missing.
+jupyter:
+	@if [ -z "$(KERNEL_TAG)" ]; then \
+		echo "No tags found. Run the workflow first (gh workflow run monthly-upgrade.yml)."; \
+		exit 1; \
+	fi
+	@if ! conda env list | awk '{print $$1}' | grep -qx "torch-$(KERNEL_TAG)"; then \
+		echo "Env torch-$(KERNEL_TAG) not installed; building it first."; \
+		$(MAKE) install TAG=$(KERNEL_TAG); \
+	else \
+		conda run -n torch-$(KERNEL_TAG) --no-capture-output python -m ipykernel install --user \
+			--name torch-$(KERNEL_TAG) --display-name "Python (torch-$(KERNEL_TAG))"; \
+		echo; \
+		echo "Jupyter kernel: Python (torch-$(KERNEL_TAG))"; \
+	fi
 
 # Pattern target so 'make 2026.05.1' works.
 20%:

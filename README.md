@@ -26,6 +26,7 @@ Other targets:
 
 ```bash
 make 2026.05.1                # build env from a specific tag
+make jupyter                  # register a Jupyter kernel for the latest env
 make list-tags                # show available tags
 ```
 
@@ -77,11 +78,20 @@ site-packages. Both repos are then importable from the same env.
 - When a dep appears in 2+ consumer repos, promote it into this env's yaml
   and remove from the consumers.
 
-Register one Jupyter kernel per env:
+## Jupyter kernels
+
+One kernel per env, named after the tag. `make latest` / `make <tag>`
+register it as part of the build, so normally there's nothing to do.
+
+To (re-)register one on its own:
 
 ```bash
-python -m ipykernel install --user --name torch-<tag>
+make jupyter                  # latest tag; builds the env first if missing
+make jupyter TAG=2026.05.1    # a specific tag
 ```
+
+Kernels show up in Jupyter as `Python (torch-<tag>)`. Remove one with
+`jupyter kernelspec remove torch-<tag>`.
 
 ## Layers
 
