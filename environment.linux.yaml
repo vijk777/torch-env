@@ -47,6 +47,7 @@ dependencies:
       - scikit-learn
       - scipy
       - seaborn
+      - tensorboard
       - tensorstore
       - tifffile
       - torch
