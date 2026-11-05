@@ -31,7 +31,7 @@ jobs:
             yaml: environment.linux.yaml
             lockfile: lockfiles/requirements.linux.txt
             label: linux
-          - os: macos-14
+          - os: macos-15
             yaml: environment.mac.yaml
             lockfile: lockfiles/requirements.mac.txt
             label: mac

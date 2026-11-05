@@ -112,7 +112,7 @@ a GPU).
 `.github/workflows/monthly-upgrade.yml` runs on the 1st of every month
 (and on manual dispatch):
 
-1. Build both envs from their yamls on ubuntu-latest and macos-14.
+1. Build both envs from their yamls on ubuntu-latest and macos-15.
 2. Run `scripts/test_env.py --ci` on each.
 3. Diff each new lockfile against the previous, filtered to packages
    named in the yaml's pip section ("main-list").
