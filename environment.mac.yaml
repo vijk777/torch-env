@@ -30,8 +30,10 @@ dependencies:
       - opencv-python
       - pandas
       - Pillow
+      - plotly
       - polars
       - pre-commit
+      - psfmodels
       - pydantic
       - pysr
       - pytest
